@@ -12,6 +12,9 @@ from typing import Any, List, Optional
 LOGGER = logging.Logger("[ImageUtility]")
 
 
+IMAGE_EXTENSIONS = [".jpeg", ".jpg", ".png"]
+
+
 def check_image_health(file_path: str) -> bool:
     """
     Function for checking image file health.
@@ -21,7 +24,10 @@ def check_image_health(file_path: str) -> bool:
     """
     try:
         if not os.path.exists(file_path):
-            LOGGER.warn(f"Could not find '{file_path}'!")
+            LOGGER.warning(f"Could not find '{file_path}'!")
+            return False
+        elif os.path.splitext(file_path)[1].lower() not in IMAGE_EXTENSIONS:
+            LOGGER.warning(f"File extension is not in {IMAGE_EXTENSIONS}!")
             return False
         img = Image.open(file_path)
         img.verify()
@@ -32,5 +38,5 @@ def check_image_health(file_path: str) -> bool:
         LOGGER.info(f"'{file_path}' is valid.")
         return True
     except: 
-        LOGGER.warn(f"'{file_path}' is corrupted!")
+        LOGGER.warning(f"'{file_path}' is corrupted!")
         return False
