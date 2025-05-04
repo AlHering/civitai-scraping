@@ -12,7 +12,7 @@ from time import sleep
 import logging
 from urllib.parse import urlparse
 from typing import Any, Optional, List, Tuple
-from src.utility import json_utility, requests_utility, hashing_utility, image_utility, internet_utility
+from src.utility import json_utility, requests_utility, hashing_utility, image_utility, internet_utility, time_utility
 from src.utility import file_system_utility
 
 
@@ -163,7 +163,7 @@ class CivitaiAPIWrapper(object):
             if data is not None and not "error" in data:
                 self.logger.info(f"Fetching content was successful.")
                 if self.response_path:
-                    json_utility.save(data, os.path.join(self.response_path, file_system_utility.clean_directory_name(url) + ".json"))
+                    json_utility.save(data, os.path.join(self.response_path, time_utility.get_timestamp() + ".json"))
                 return data
             else:
                 self.logger.warning(f"Fetching metadata failed.")
