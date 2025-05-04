@@ -188,19 +188,6 @@ class CivitaiAPIWrapper(object):
         requests_utility.download_web_asset(
             asset_url, output_path=output_path, headers=self.headers)
         
-    def fetch_or_create_missing_model_files(self, 
-                                            folder_path: str) -> List[Tuple[Optional[str], Optional[dict], Optional[dict], Optional[str]]]:
-        """
-        Fetching or creates missing model files.
-        :param folder_path: Path to model folder.
-        :return: Tuple of hash, model version metadata, model metadata and cover image path.
-        """
-        results = []
-        for root, dirs, files in os.walk(folder_path, topdown=True):
-            for file in files:
-                results.append(self.download_data_for_model_file(os.path.join(root, file)))
-        return results
-    
     def download_data_for_model_file(self,
                                      model_file_path: str,
                                      skip_filename_check: bool = True,
@@ -208,7 +195,7 @@ class CivitaiAPIWrapper(object):
                                      save_hash: bool = True,
                                      save_cover_image: bool = True) -> Tuple[Optional[str], Optional[dict], Optional[dict], Optional[str]]:
         """
-        Downloads model metadata for model file.
+        Downloads additional data for model file.
         :param model_file_path: Path of the model file.
         :param skip_filename_check: Flag for declaring whether to skip filename checks (only check file hash).
             Defaults to true.
