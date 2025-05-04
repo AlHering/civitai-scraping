@@ -9,12 +9,14 @@ import os
 import requests
 import json
 from time import sleep
+import logging
 from urllib.parse import urlparse
 from typing import Any, Optional, List, Tuple
 from src.utility import json_utility, requests_utility, hashing_utility, image_utility, internet_utility
 from src.utility import file_system_utility
 
 
+LOGGER = logging.Logger("[CivitaiAPIWrapper]")
 MODEL_EXTENSIONS = [".safetensors", ".ckpt", ".pt", ".zip", ".pth"]
 IMG_WIDTHS = [1080, 720, 576, 480]
 IMG_EXTS = [".jpeg", ".jpg", ".png"]
@@ -53,7 +55,8 @@ class CivitaiAPIWrapper(object):
         :param logger: Logger for logging progress.
             Defaults to None in which case the progress is not logged.
         """
-        self.logger = logger
+        global LOGGER
+        self.logger = LOGGER if logger is None else logger
         self.api_key = api_key
         self.headers = {"Authorization": "Bearer " + self.api_key}
         self.base_url = "https://civitai.com/"
@@ -81,8 +84,7 @@ class CivitaiAPIWrapper(object):
         :return: True if connection was established successfully else False.
         """
         result = requests.get(self.base_url).status_code == 200
-        if self.logger is not None:
-            self.logger.info("Connection was successfully established.") if result else self.logger.warning(
+        self.logger.info("Connection was successfully established.") if result else self.logger.warning(
             "Connection could not be established.")
         return result
 
@@ -132,8 +134,7 @@ class CivitaiAPIWrapper(object):
             next_url = False
             if isinstance(data, dict):
                 metadata = data["metadata"]
-                if self.logger is not None:
-                    self.logger.info(f"Fetched metadata: {metadata}.")
+                self.logger.info(f"Fetched metadata: {metadata}.")
                 next_url = metadata.get("nextPage")
                 if next_url:
                     if "limit=" not in next_url:
@@ -142,8 +143,7 @@ class CivitaiAPIWrapper(object):
                         next_url += "&nsfw=true"
                 callback(data["items"])
             else:
-                if self.logger is not None:
-                    self.logger.warning(f"Fetched data is no dictionary: {data}")
+                self.logger.warning(f"Fetched data is no dictionary: {data}")
 
     def safely_fetch_api_data(self, url: str, current_try: int = 3, max_tries: int = 3) -> dict:
         """
@@ -155,24 +155,20 @@ class CivitaiAPIWrapper(object):
             Defaults to 3.
         :return: Fetched data or empty dictionary.
         """
-        if self.logger is not None:
-            self.logger.info(
-                f"Fetching data for '{url}'...")
+        self.logger.info(
+            f"Fetching data for '{url}'...")
         resp = requests.get(url, headers=self.headers)
         try:
             data = json.loads(resp.content)
             if data is not None and not "error" in data:
-                if self.logger is not None:
-                    self.logger.info(f"Fetching content was successful.")
+                self.logger.info(f"Fetching content was successful.")
                 if self.response_path:
                     json_utility.save(data, os.path.join(self.response_path, file_system_utility.clean_directory_name(url) + ".json"))
                 return data
             else:
-                if self.logger is not None:
-                    self.logger.warning(f"Fetching metadata failed.")
+                self.logger.warning(f"Fetching metadata failed.")
         except json.JSONDecodeError:
-            if self.logger is not None:
-                self.logger.warning(f"Response content could not be deserialized.")
+            self.logger.warning(f"Response content could not be deserialized.")
             if current_try < max_tries:
                 sleep(self.wait)
                 return self.safely_fetch_api_data(url, current_try+1, max_tries=max_tries)
@@ -212,13 +208,11 @@ class CivitaiAPIWrapper(object):
             directory, file = os.path.split(model_file_path)
             file_name, file_extension = os.path.splitext(file)
         else:
-            if self.logger:
-                self.logger.warning(f"File '{model_file_path}' does not exist, skipping...")
+            self.logger.warning(f"File '{model_file_path}' does not exist, skipping...")
             return None, None, None, None
 
         if file_extension.lower() not in MODEL_EXTENSIONS:
-            if self.logger:
-                self.logger.warning(f"File extension of '{model_file_path}' is not in {MODEL_EXTENSIONS}, skipping...")
+            self.logger.warning(f"File extension of '{model_file_path}' is not in {MODEL_EXTENSIONS}, skipping...")
             return None, None, None, None
         
         model_hash_path = os.path.join(directory, f"{file_name}.hash")
@@ -239,8 +233,7 @@ class CivitaiAPIWrapper(object):
             if model_version_metadata:
                 if (skip_filename_check or any(entry["name"] == file for entry in model_version_metadata["files"])):
                     json_utility.save(model_version_metadata, model_version_metadata_path)
-                elif self.logger:
-                    self.logger.warning(f"Found metadata, but file name is not in {[entry['name'] for entry in model_version_metadata['files']]}")
+                self.logger.warning(f"Found metadata, but file name is not in {[entry['name'] for entry in model_version_metadata['files']]}")
         else:
             model_version_metadata = json_utility.load(model_version_metadata_path)
 
@@ -285,14 +278,12 @@ class CivitaiAPIWrapper(object):
                     image_path = os.path.join(directory, f"{file_name}{image_file_ext}")
                     tries = 0
                     while not image_utility.check_image_health(image_path) and tries <= len(IMG_WIDTHS):
-                        if self.logger:
-                            self.logger.info(f"'{image_path}' not existing or invalid, downloading ...")
+                        self.logger.info(f"'{image_path}' not existing or invalid, downloading ...")
                         if not self.download_asset(
                             asset_url=fix_image_url(image_data, width=None if tries == 0 else IMG_WIDTHS[tries - 1]),
                             output_path=image_path):
                             while not internet_utility.check_connection():
-                                if self.logger:
-                                    self.logger.info(f"Waiting for internet connection...")
+                                self.logger.info(f"Waiting for internet connection...")
                                 internet_utility.wait_for_connection()
                             tries += 1
                     if not os.path.exists(image_path):
