@@ -11,29 +11,11 @@ import json
 from time import sleep
 import logging
 from urllib.parse import urlparse
-from typing import Any, Optional, List, Tuple
-from src.utility import json_utility, requests_utility, hashing_utility, image_utility, internet_utility, time_utility
-from src.utility import file_system_utility
+from typing import Any, Optional, List
+from src.utility import json_utility, requests_utility, time_utility
 
 
 LOGGER = logging.Logger("[CivitaiAPIWrapper]")
-MODEL_EXTENSIONS = [".safetensors", ".ckpt", ".pt", ".zip", ".pth"]
-IMG_WIDTHS = [1080, 720, 576, 480]
-IMG_EXTS = [".jpeg", ".jpg", ".png"]
-
-
-def fix_image_url(image_data: dict, width: int = None) -> str:
-    """
-    Tries to fix civitai image URLs.
-    :param image_data: Image data.
-    :param width: Forced width to use.
-    :return: Fixed image URL.
-    """
-    img_url_parts = image_data["url"].split("/")
-    for index, part in enumerate(img_url_parts):
-        if part.startswith("width="):
-            img_url_parts[index] = f"width={image_data['width'] if width is None else width}"
-    return "/".join(img_url_parts)
 
 
 class CivitaiAPIWrapper(object):
@@ -45,18 +27,18 @@ class CivitaiAPIWrapper(object):
                  api_key: str = None, 
                  wait_time: float = 2.8, 
                  response_output_path: str | None = None, 
-                 logger: Any = None) -> None:
+                 logger_overwrite: Any = None) -> None:
         """
         Initiation method.
         :param api_key: Civitai API key which can be created in the civitai user account settings.
         :param wait_time: Waiting time in seconds between access or download tries.
         :param response_output_path: Folder path to backup raw responses.
             Defaults to None in which case raw response content is not backed up.
-        :param logger: Logger for logging progress.
+        :param logger_overwrite: Logger overwrite for logging progress.
             Defaults to None in which case the progress is not logged.
         """
         global LOGGER
-        self.logger = LOGGER if logger is None else logger
+        self.logger = LOGGER if logger_overwrite is None else logger_overwrite
         self.api_key = api_key
         self.headers = {"Authorization": "Bearer " + self.api_key}
         self.base_url = "https://civitai.com/"
@@ -183,110 +165,3 @@ class CivitaiAPIWrapper(object):
         """
         requests_utility.download_web_asset(
             asset_url, output_path=output_path, headers=self.headers)
-        
-    def download_data_for_model_file(self,
-                                     model_file_path: str,
-                                     skip_filename_check: bool = True,
-                                     save_model_metadata: bool = True,
-                                     save_hash: bool = True,
-                                     save_cover_image: bool = True) -> Tuple[Optional[str], Optional[dict], Optional[dict], Optional[str]]:
-        """
-        Downloads additional data for model file.
-        :param model_file_path: Path of the model file.
-        :param skip_filename_check: Flag for declaring whether to skip filename checks (only check file hash).
-            Defaults to true.
-        :param save_model_metadata: Flag for declaring whether to save model metadata.
-            Defaults to true.
-        :param save_hash: Flag for declaring whether to save hash.
-            Defaults to true.
-        :param save_cover_image: Flag for declaring whether to save cover image.
-            Defaults to true.
-        :return: Hash, model version metadata, model metadata and cover image path.
-        """
-        # check preconditions
-        if os.path.isfile(model_file_path):
-            directory, file = os.path.split(model_file_path)
-            file_name, file_extension = os.path.splitext(file)
-        else:
-            self.logger.warning(f"File '{model_file_path}' does not exist, skipping...")
-            return None, None, None, None
-
-        if file_extension.lower() not in MODEL_EXTENSIONS:
-            self.logger.warning(f"File extension of '{model_file_path}' is not in {MODEL_EXTENSIONS}, skipping...")
-            return None, None, None, None
-        
-        model_hash_path = os.path.join(directory, f"{file_name}.hash")
-        model_version_metadata_path = os.path.join(directory, f"{file_name}_model_version.json")
-        model_metadata_path = os.path.join(directory, f"{file_name}_model.json")
-
-        # handle hash
-        if not os.path.exists(model_hash_path):
-            hash = hashing_utility.hash_with_sha256(model_file_path)
-            if save_hash:
-                open(model_hash_path, "w").write(hash)
-        else:
-            hash = open(model_hash_path, "r").read()  
-                
-        # handle model version metadata
-        if not os.path.exists(model_version_metadata_path):
-            model_version_metadata = self.safely_fetch_api_data(self.model_version_by_hash_endpoint + f"/{hash}?nsfw=true")
-            if model_version_metadata:
-                if (skip_filename_check or any(entry["name"] == file for entry in model_version_metadata["files"])):
-                    json_utility.save(model_version_metadata, model_version_metadata_path)
-                self.logger.warning(f"Found metadata, but file name is not in {[entry['name'] for entry in model_version_metadata['files']]}")
-        else:
-            model_version_metadata = json_utility.load(model_version_metadata_path)
-
-        # handle model metadata
-        if not os.path.exists(model_metadata_path) and model_version_metadata:
-            model_metadata = self.safely_fetch_api_data(f"{self.model_api_endpoint}/{model_version_metadata['modelId']}")
-            if model_metadata and save_model_metadata:
-                json_utility.save(model_metadata, model_metadata_path)
-        else:
-            model_metadata = json_utility.load(model_metadata_path)
-
-        # handle cover image
-        if save_cover_image and model_version_metadata:
-            image_path = self.download_image_for_model_file(
-                directory=directory,
-                file_name=file_name,
-                model_version_metadata=model_version_metadata
-            )
-
-        return hash, model_version_metadata, model_metadata, image_path
-    
-    def download_image_for_model_file(self, 
-                                      directory: str, 
-                                      file_name: str, 
-                                      model_version_metadata: dict) -> str | None:
-        """
-        Downloads cover image for model file.
-        :param directory: Target directory for image file.
-        :param file_name: Image file name, preferably model file name (without extension).
-        :param model_version_metadata: Model version metadata.
-        :return: Image file path, if download was successful.
-        """
-        if model_version_metadata.get("images", False):
-            options = [img for img in model_version_metadata["images"] if img.get("type", "image") != "video"]
-            if options:
-                image_data = options[0]
-                image_url_parts = image_data["url"].replace("https://image.civitai.com/", "").split("/")
-                image_file_ext = os.path.splitext(image_url_parts[-1])[1]
-                if image_file_ext not in IMG_EXTS and self.logger:
-                    self.logger.warning(f"Unsupported extension for image download: '{image_file_ext}'")
-                else:
-                    image_path = os.path.join(directory, f"{file_name}{image_file_ext}")
-                    tries = 0
-                    while not image_utility.check_image_health(image_path) and tries <= len(IMG_WIDTHS):
-                        self.logger.info(f"'{image_path}' not existing or invalid, downloading ...")
-                        if not self.download_asset(
-                            asset_url=fix_image_url(image_data, width=None if tries == 0 else IMG_WIDTHS[tries - 1]),
-                            output_path=image_path):
-                            while not internet_utility.check_connection():
-                                self.logger.info(f"Waiting for internet connection...")
-                                internet_utility.wait_for_connection()
-                            tries += 1
-                    if not os.path.exists(image_path):
-                        image_path = None
-                return image_path
-        return None
