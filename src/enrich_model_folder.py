@@ -9,6 +9,7 @@ import os
 from typing import Any, Optional, Tuple
 from src.utility import json_utility, hashing_utility, image_utility, internet_utility
 from src.model.civitai_api_wrapper import CivitaiAPIWrapper
+from src.configuration.paths import RAW_RESPONSE_FOLDER, DATA_FOLDER
 
 
 MODEL_EXTENSIONS = [".safetensors", ".ckpt", ".pt", ".zip", ".pth"]
@@ -141,10 +142,13 @@ def download_image_for_model_file(wrapper: CivitaiAPIWrapper,
 
 
 if __name__ == "__main__":
+    # Create an API key via civitai user account settings and replace "YourAPIkey" below
     wrapper = CivitaiAPIWrapper(
-        api_key="YourAPIkey"
+        api_key="YourAPIkey",
+        response_output_path=RAW_RESPONSE_FOLDER
     )
-    for root, dirs, files in os.walk("MyModelFolder", topdown=True):
+    # Replace DATA_FOLDER by your model folder below to start downloading metadata for the model files in this folder
+    for root, dirs, files in os.walk(DATA_FOLDER, topdown=True):
         for file in files:
             download_data_for_model_file(
                 wrapper=wrapper,

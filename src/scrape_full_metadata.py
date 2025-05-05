@@ -15,6 +15,7 @@ from time import sleep
 from src.database.basic_sqlalchemy_interface import BasicSQLAlchemyInterface, FilterMask
 from src.database.data_model import populate_data_infrastructure, get_default_entries
 from src.model.civitai_api_wrapper import CivitaiAPIWrapper
+from src.configuration.paths import RAW_RESPONSE_FOLDER, DATABASE_FOLDER, IMAGE_FOLDER
 from src.utility import json_utility, internet_utility
 
 
@@ -37,6 +38,8 @@ class MetadataScraper(object):
             self.wrapper = wrapper
             self.database = database
             self.image_folder = image_folder
+            if self.image_folder:
+                os.makedirs(self.image_folder, exist_ok=True)
 
     def scrape_to_database(self, asset_type: str, start_url: str | None = None) -> None:
         """
@@ -126,7 +129,9 @@ class MetadataScraper(object):
         
         if not obj:
             print(f"\tFound new image {entry['id']}, adding...")
-            file_name = self.save_image_to_disk(entry["url"]).split("/")[-1]
+            file_name = None
+            if self.image_folder:
+                file_name = self.save_image_to_disk(url=entry["url"], image_folder=self.image_folder).split("/")[-1]
             self.database.post_object(
                 "image", 
                 url=url,
@@ -169,20 +174,23 @@ class MetadataScraper(object):
 
 
 if __name__ == "__main__":
+    # Create an API key via civitai user account settings and replace "YourAPIkey" below
     wrapper = CivitaiAPIWrapper(
         api_key="YourAPIkey",
-        response_output_path="FolderForRawResponseBackup"
+        response_output_path=RAW_RESPONSE_FOLDER
     )
     database = BasicSQLAlchemyInterface(
-        working_directory="my_database_working_directory",
+        working_directory=DATABASE_FOLDER,
         population_function=populate_data_infrastructure,
         default_entries=get_default_entries(),
     )
+    # Set an image folder below to download images while fetching metadata
     scraper = MetadataScraper(
         wrapper=wrapper,
         database=database,
         image_folder=None
     )
+    # Change "models" to "images" below to scrape image metadata to database
     scraper.scrape_to_database(asset_type="models", start_url=None)
 
     
