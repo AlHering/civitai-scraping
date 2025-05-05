@@ -8,8 +8,8 @@
 import os
 from dotenv import dotenv_values
 import logging
-LOGGER = logging.Logger("[CivitaiScraping]")
-LOGGER.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO, format="(%(asctime)s)[CivitaiScraping][%(levelname)s] %(message)s")
+LOGGER = logging
 
 
 PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
