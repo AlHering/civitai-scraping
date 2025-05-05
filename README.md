@@ -15,7 +15,7 @@ Take a look at the bottom of the script. If there is a `if __name__ == "__main__
 - `src/model/civitai_api_wrapper.py` contains the `CivitaiAPIWrapper` for easier parameterized access
     - take a look at the `collect_assets_via_api` method for fetching cycle with a callback function to handle fetched entries
     - take a look at the `safely_fetch_api_data` method for handling errors in request loops
-- `src/scrape_full_metadata.py` contains the `MetadataScraper` for scraping models and image metadata into a database (`src/database/basic_sqlalchemy_interface.py` and `src/database/data_model.py`)
+- `scrape_full_metadata.py` contains the `MetadataScraper` for scraping models and image metadata into a database (`src/database/basic_sqlalchemy_interface.py` and `src/database/data_model.py`)
     - the `scrape_to_database` method creates a callback depending on the target asset (models or images) and uses the `CivitaiAPIWrapper` to loop through requests accordingly
     - the `import_response_folder` method allows to import entries from raw responses, if they are backed up
 - `enrich_model_folder.py` contains functionality to download metadata for already downloaded models (e.g. safetensor files)
