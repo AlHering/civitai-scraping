@@ -32,4 +32,4 @@ for folder in [RAW_RESPONSE_FOLDER, DATABASE_FOLDER, IMAGE_FOLDER]:
 
 
 if API_KEY == "MyAPIKey":
-    logging.warning("The API_KEY in 'src/configuration/config.py' is only a placeholder, please adjust it for full functionality!")
+    logging.warning("The API_KEY 'MyAPIKey' in 'src/configuration/config.py' is only a placeholder, please adjust it for full functionality!")
