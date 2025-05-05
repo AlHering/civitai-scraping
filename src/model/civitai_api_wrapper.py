@@ -22,13 +22,13 @@ class CivitaiAPIWrapper(object):
 
     def __init__(self, 
                  api_key: str = None, 
-                 wait_time: float = 2.8, 
+                 wait_time: float = 1.5, 
                  response_output_path: str | None = None, 
                  logger_overwrite: Any = None) -> None:
         """
         Initiation method.
         :param api_key: Civitai API key which can be created in the civitai user account settings.
-        :param wait_time: Waiting time in seconds between access or download tries.
+        :param wait_time: Waiting time in seconds between requests or download tries.
         :param response_output_path: Folder path to backup raw responses.
             Defaults to None in which case raw response content is not backed up.
         :param logger_overwrite: Logger overwrite for logging progress.
@@ -148,7 +148,7 @@ class CivitaiAPIWrapper(object):
         except json.JSONDecodeError:
             self.logger.warning(f"Response content could not be deserialized.")
             if current_try < max_tries:
-                sleep(self.wait)
+                sleep(self.wait*2)
                 return self.safely_fetch_api_data(url, current_try+1, max_tries=max_tries)
             else:
                 return {}
