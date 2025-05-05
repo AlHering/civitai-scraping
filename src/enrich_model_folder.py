@@ -8,7 +8,7 @@
 import os
 from typing import Any, Optional, Tuple
 from src.utility import json_utility, hashing_utility, image_utility, internet_utility
-from src.civitai_api_wrapper import CivitaiAPIWrapper
+from src.model.civitai_api_wrapper import CivitaiAPIWrapper
 
 
 MODEL_EXTENSIONS = [".safetensors", ".ckpt", ".pt", ".zip", ".pth"]
@@ -138,3 +138,15 @@ def download_image_for_model_file(wrapper: CivitaiAPIWrapper,
                     image_path = None
             return image_path
     return None
+
+
+if __name__ == "__main__":
+    wrapper = CivitaiAPIWrapper(
+        api_key="YourAPIkey"
+    )
+    for root, dirs, files in os.walk("MyModelFolder", topdown=True):
+        for file in files:
+            download_data_for_model_file(
+                wrapper=wrapper,
+                model_file_path=os.path.join(root, file)
+            )
