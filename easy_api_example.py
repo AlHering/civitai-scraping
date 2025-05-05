@@ -7,7 +7,7 @@
 """
 import requests
 import json
-from utility import json_utility
+from src.utility import json_utility
 
 # API Documentation: https://developer.civitai.com/docs/api/public-rest
 
@@ -19,8 +19,8 @@ headers = {"Authorization": "Bearer " + api_key}
 models_base_url = "https://civitai.com/api/v1/models"
 
 # Query parameter stack for models: https://developer.civitai.com/docs/api/public-rest#get-apiv1models
-# E.g. sort models by newest, fetch first 20 entries, allow nsfw content
-models_params = "?sort=Newest&limit=20&nsfw=true"
+# E.g. sort models by newest, fetch first 5 entries, allow nsfw content
+models_params = "?sort=Newest&limit=5&nsfw=true"
 
 # Fetch model metadata and save it to file
 resp = requests.get(models_base_url + models_params, headers=headers)
@@ -29,7 +29,7 @@ json_utility.save(data=data, path="response.json")
 
 # Response data always contains "items" with the list of requested entries, and "metadata"
 # The response "metadata" contains a cursor and the next page under "nextPage"
-# Requesting the next page as seen above will yield the next 20 model entries under the given parameter conditions
+# Requesting the next page as seen above will yield the next 5 model entries under the given parameter conditions
 for model_entry in data["items"]:
     print(f"Model {model_entry['id']}: '{model_entry['name']}'")
     for model_version_entry in model_entry["modelVersions"]:
