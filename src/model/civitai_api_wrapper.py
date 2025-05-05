@@ -15,9 +15,6 @@ from typing import Any, Optional, List
 from src.utility import json_utility, requests_utility, time_utility
 
 
-LOGGER = logging.Logger("[CivitaiAPIWrapper]")
-
-
 class CivitaiAPIWrapper(object):
     """
     Class, representing civitai API wrapper.
@@ -37,8 +34,7 @@ class CivitaiAPIWrapper(object):
         :param logger_overwrite: Logger overwrite for logging progress.
             Defaults to None in which case the progress is not logged.
         """
-        global LOGGER
-        self.logger = LOGGER if logger_overwrite is None else logger_overwrite
+        self.logger = logging.Logger("[CivitaiAPIWrapper]") if logger_overwrite is None else logger_overwrite
         self.api_key = api_key
         self.headers = {"Authorization": "Bearer " + self.api_key}
         self.base_url = "https://civitai.com/"
