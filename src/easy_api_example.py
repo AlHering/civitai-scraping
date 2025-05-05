@@ -7,7 +7,7 @@
 """
 import requests
 import json
-from src.utility import json_utility
+from utility import json_utility
 
 # API Documentation: https://developer.civitai.com/docs/api/public-rest
 
@@ -31,6 +31,7 @@ json_utility.save(data=data, path="response.json")
 # The response "metadata" contains a cursor and the next page under "nextPage"
 # Requesting the next page as seen above will yield the next 20 model entries under the given parameter conditions
 for model_entry in data["items"]:
-    print(f"Model {model_entry['id']}: {model_entry['name']}")
+    print(f"Model {model_entry['id']}: '{model_entry['name']}'")
     for model_version_entry in model_entry["modelVersions"]:
-        print(f"\tModelversion {model_version_entry['id']}: {model_version_entry['name']} ({model_version_entry['baseModel']})")
+        print(f"\tModelversion {model_version_entry['id']}: '{model_version_entry['name']}' ({model_version_entry['baseModel']}) - Download: '{model_version_entry['downloadUrl']}?token={api_key}'")
+    print("")
