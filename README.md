@@ -9,7 +9,7 @@ A collection of scripts for CivitAI scraping.
 - a `response.json` is created upon successful request, take a look into it to better understand the response structure
 
 # Further functionality
-Before running any further scripts, make sure you added your API key under `src/configuration/config.py`.
+Before running any further scripts, make sure you added your API key under `src/configuration/config.py` or created an `.env` file with `API_KEY`.
 Take a look at the bottom of the script. If there is a `if __name__ == "__main__":` section, it will contain further info on basic configuration.
 
 - `src/model/civitai_api_wrapper.py` contains the `CivitaiAPIWrapper` for easier parameterized access

@@ -6,15 +6,22 @@
 ****************************************************
 """
 import os
+from dotenv import dotenv_values
 import logging
+
+
+PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+ENV_PATH = os.path.join(PROJECT_FOLDER, ".env")
+ENV = dotenv_values(ENV_PATH) if os.path.exists(ENV_PATH) else {}
+
 
 # Authorization via API key or token parameter: https://developer.civitai.com/docs/api/public-rest#authorization
 # Head to your civitai user account settings to create one
-API_KEY = "MyAPIKey"
+API_KEY = ENV.get("API_KEY", "MyAPIKey")
 
-PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+# Additional folders
 DATA_FOLDER = os.path.join(PROJECT_FOLDER, "data")
-
 RAW_RESPONSE_FOLDER = os.path.join(DATA_FOLDER, "raw_responses")
 DATABASE_FOLDER = os.path.join(DATA_FOLDER, "database")
 IMAGE_FOLDER = os.path.join(DATA_FOLDER, "images")
