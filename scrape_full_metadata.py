@@ -15,7 +15,7 @@ from time import sleep
 from src.database.basic_sqlalchemy_interface import BasicSQLAlchemyInterface, FilterMask
 from src.database.data_model import populate_data_infrastructure, get_default_entries
 from src.model.civitai_api_wrapper import CivitaiAPIWrapper
-from src.configuration.config import API_KEY, RAW_RESPONSE_FOLDER, DATABASE_FOLDER, IMAGE_FOLDER
+from src.configuration.config import LOGGER, API_KEY, RAW_RESPONSE_FOLDER, DATABASE_FOLDER, IMAGE_FOLDER
 from src.utility import json_utility, internet_utility
 
 
@@ -188,7 +188,8 @@ if __name__ == "__main__":
     # Create an API key via civitai user account settings and replace "MyAPIKey" under src/configuration/config.py
     wrapper = CivitaiAPIWrapper(
         api_key=API_KEY,
-        response_output_path=RAW_RESPONSE_FOLDER
+        response_output_path=RAW_RESPONSE_FOLDER,
+        logger_overwrite=LOGGER
     )
     database = BasicSQLAlchemyInterface(
         working_directory=DATABASE_FOLDER,

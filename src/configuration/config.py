@@ -8,6 +8,8 @@
 import os
 from dotenv import dotenv_values
 import logging
+LOGGER = logging.Logger("[CivitaiScraping]")
+LOGGER.setLevel(logging.INFO)
 
 
 PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
