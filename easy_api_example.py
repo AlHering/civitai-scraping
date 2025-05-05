@@ -12,7 +12,7 @@ from src.utility import json_utility
 # API Documentation: https://developer.civitai.com/docs/api/public-rest
 
 # Authorization via API key or token parameter: https://developer.civitai.com/docs/api/public-rest#authorization
-api_key = "MY_API_KEY" 
+api_key = "MyAPIKey" 
 headers = {"Authorization": "Bearer " + api_key}
 
 # URLs
@@ -35,3 +35,5 @@ for model_entry in data["items"]:
     for model_version_entry in model_entry["modelVersions"]:
         print(f"\tModelversion {model_version_entry['id']}: '{model_version_entry['name']}' ({model_version_entry['baseModel']}) - Download: '{model_version_entry['downloadUrl']}?token={api_key}'")
     print("")
+
+print(f"Next API page to fetch: {data['metadata']['nextPage']}")

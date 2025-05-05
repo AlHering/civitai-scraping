@@ -15,7 +15,7 @@ from time import sleep
 from src.database.basic_sqlalchemy_interface import BasicSQLAlchemyInterface, FilterMask
 from src.database.data_model import populate_data_infrastructure, get_default_entries
 from src.model.civitai_api_wrapper import CivitaiAPIWrapper
-from src.configuration.paths import RAW_RESPONSE_FOLDER, DATABASE_FOLDER, IMAGE_FOLDER
+from src.configuration.config import API_KEY, RAW_RESPONSE_FOLDER, DATABASE_FOLDER, IMAGE_FOLDER
 from src.utility import json_utility, internet_utility
 
 
@@ -139,33 +139,44 @@ class MetadataScraper(object):
                 data=entry,
                 file=file_name)
 
-    def import_response_file(self, file_path: str) -> None:
+    def import_response_file(self, file_path: str, asset_type: str = "models") -> None:
         """
         Imports a specific response json file.
         :param file_path: Path to response file.
+        :param asset_type: Asset type out of ["models", "images"].
         """
         try:
             data = json_utility.load(file_path)
         except:
             print(f"\n\tFile {file_path} could not be loaded...\n")
             data = {}
+
+        entry_url_base = {
+                "models": "https://civitai.com/api/v1/models/", 
+                "images": "https://civitai.com/api/v1/images/"}[asset_type]
+        
+        patching_method = {
+                "models": self.post_or_patch_model_entry, 
+                "images": self.post_or_patch_image_entry}[asset_type]
+        
         try:
             if "items" in data:
-                for index, entry in enumerate(tqdm(data["items"], desc="Importing model entries...", unit="entry", leave=False)):
-                    url = f"https://civitai.com/api/v1/models/{entry['id']}"
-                    self.post_or_patch_model_entry(url=url, entry=entry)
+                for index, entry in enumerate(tqdm(data["items"], desc=f"Importing {asset_type} entries...", unit="entry", leave=False)):
+                    url = entry_url_base + entry["id"]
+                    patching_method(url=url, entry=entry)
             elif "id" in data:
-                url = f"https://civitai.com/api/v1/models/{data['id']}"
-                self.post_or_patch_model_entry(url=url, entry=data)
+                url = entry_url_base + data["id"]
+                patching_method(url=url, entry=data)
             else:
                 print(f"\n\tFile {file_path}: entry {entry['id']} could not be imported...\n")
         except:
             print(f"\n\tFile {file_path}: entry {entry['id']} could not be imported...\n")
 
-    def import_response_folder(self, path: str = "/mnt/Workspaces/Data/websites/civitai/responses") -> None:
+    def import_response_folder(self, path: str = RAW_RESPONSE_FOLDER, asset_type: str = "models") -> None:
         """
         Imports raw response folder.
         :param path: Folder path.
+        :param asset_type: Asset type out of ["models", "images"].
         """
         for root, _, files in os.walk(path):
             for file in tqdm(files, desc="Loading response files...", unit="file"):
@@ -174,9 +185,9 @@ class MetadataScraper(object):
 
 
 if __name__ == "__main__":
-    # Create an API key via civitai user account settings and replace "YourAPIkey" below
+    # Create an API key via civitai user account settings and replace "MyAPIKey" under src/configuration/config.py
     wrapper = CivitaiAPIWrapper(
-        api_key="YourAPIkey",
+        api_key=API_KEY,
         response_output_path=RAW_RESPONSE_FOLDER
     )
     database = BasicSQLAlchemyInterface(
