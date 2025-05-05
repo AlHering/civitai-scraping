@@ -163,5 +163,6 @@ class CivitaiAPIWrapper(object):
         :param asset_url: Asset URL.
         :param output_path: Output path.
         """
+        #TODO: Test and refine for different asset types.
         requests_utility.download_web_asset(
             asset_url, output_path=output_path, headers=self.headers)
