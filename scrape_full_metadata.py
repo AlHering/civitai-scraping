@@ -59,7 +59,7 @@ class MetadataScraper(object):
         def callback(entries: List[Any]) -> None:
             for entry in entries:
                 try:
-                    url = entry_url_base + entry['id']
+                    url = entry_url_base + str(entry["id"])
                     patching_method(url=url, entry=entry)
                 except Exception as ex:
                     wrapper.logger.warning(f"Process failed for {asset_type} entry {entry['id']} ({ex})...")
@@ -162,10 +162,10 @@ class MetadataScraper(object):
         try:
             if "items" in data:
                 for index, entry in enumerate(tqdm(data["items"], desc=f"Importing {asset_type} entries...", unit="entry", leave=False)):
-                    url = entry_url_base + entry["id"]
+                    url = entry_url_base + str(entry["id"])
                     patching_method(url=url, entry=entry)
             elif "id" in data:
-                url = entry_url_base + data["id"]
+                url = entry_url_base + str(entry["id"])
                 patching_method(url=url, entry=data)
             else:
                 print(f"\n\tFile {file_path}: entry {entry['id']} could not be imported...\n")
