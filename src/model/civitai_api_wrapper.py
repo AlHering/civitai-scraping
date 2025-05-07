@@ -135,12 +135,14 @@ class CivitaiAPIWrapper(object):
         """
         self.logger.info(
             f"Fetching data for '{url}'...")
-        resp = requests.get(url, headers=self.headers)
+        
         try:
+            resp = requests.get(url, headers=self.headers)
             data = json.loads(resp.content)
             if data is not None and not "error" in data:
                 self.logger.info(f"Fetching content was successful.")
                 if self.response_path:
+                    open(os.path.join(self.response_path, "#last_fetched_url.txt"), "w").write(url)
                     json_utility.save(data, os.path.join(self.response_path, time_utility.get_timestamp() + ".json"))
                 return data
             else:
@@ -150,8 +152,12 @@ class CivitaiAPIWrapper(object):
             if current_try < max_tries:
                 sleep(self.wait*2)
                 return self.safely_fetch_api_data(url, current_try+1, max_tries=max_tries)
-            else:
-                return {}
+        except requests.exceptions.ConnectionError:
+            self.logger.warning(f"Connection was closed.")
+            if current_try < max_tries:
+                sleep(self.wait*2)
+                return self.safely_fetch_api_data(url, current_try+1, max_tries=max_tries)
+        return {}
 
     def download_asset(self, asset_url: str, output_path: str) -> None:
         """
