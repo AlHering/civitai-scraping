@@ -96,12 +96,13 @@ class BasicSQLAlchemyInterface(object):
                 
         if self.logger is not None:
             self.logger.info(f"Inserting default entries: {self.default_entries}")
-        for object_type in self.default_entries:
-            for entry in self.default_entries[object_type]:
-                if all(key in entry for key in self.primary_keys[object_type]):
-                    self.put_object(object_type=object_type, reference_attributes=self.primary_keys[object_type], **entry)
-                else:
-                    self.put_object(object_type=object_type, **entry)
+        if self.default_entries:
+            for object_type in self.default_entries:
+                for entry in self.default_entries[object_type]:
+                    if all(key in entry for key in self.primary_keys[object_type]):
+                        self.put_object(object_type=object_type, reference_attributes=self.primary_keys[object_type], **entry)
+                    else:
+                        self.put_object(object_type=object_type, **entry)
 
                 
     """
