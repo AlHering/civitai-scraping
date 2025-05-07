@@ -7,6 +7,8 @@
 """
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Engine, Column, String, JSON, Integer, DateTime, func, Boolean
+from sqlalchemy_utils import UUIDType
+from uuid import uuid4
 
 
 def populate_data_infrastructure(engine: Engine, schema: str, model: dict) -> None:
@@ -23,14 +25,14 @@ def populate_data_infrastructure(engine: Engine, schema: str, model: dict) -> No
 
     class Model(base):
         """
-        Log class, representing an model entry.
+        Log class, representing a model entry.
         """
         __tablename__ = f"{schema}model"
         __table_args__ = {
             "comment": "Model table.", "extend_existing": True}
 
-        id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False,
-                    comment="ID of the entry.")
+        uuid = Column(UUIDType(binary=False), primary_key=True, unique=True, nullable=False, default=uuid4,
+                    comment="UUID of the entry.")
         url = Column(String, unique=True, nullable=False,
                      comment="URL of the entry.")
         source = Column(String,
@@ -38,6 +40,34 @@ def populate_data_infrastructure(engine: Engine, schema: str, model: dict) -> No
         data = Column(JSON,
                       comment="Metadata entry config.")
         
+        state = Column(String,
+                     comment="State of the entry (full, extracted, ...).")
+        created = Column(DateTime, server_default=func.now(),
+                         comment="Timestamp of creation.")
+        updated = Column(DateTime, server_default=func.now(), server_onupdate=func.now(),
+                         comment="Timestamp of last update.")
+        inactive = Column(Boolean, nullable=False, default=False,
+                          comment="Inactivity flag.")
+    
+    class ModelVersion(base):
+        """
+        Log class, representing a model version entry.
+        """
+        __tablename__ = f"{schema}modelversion"
+        __table_args__ = {
+            "comment": "Model version table.", "extend_existing": True}
+
+        uuid = Column(UUIDType(binary=False), primary_key=True, unique=True, nullable=False, default=uuid4,
+                    comment="UUID of the entry.")
+        url = Column(String, unique=True, nullable=False,
+                     comment="URL of the entry.")
+        source = Column(String,
+                     comment="Source of the entry.")
+        data = Column(JSON,
+                      comment="Metadata entry config.")
+        
+        state = Column(String,
+                     comment="State of the entry (full, extracted, ...).")
         created = Column(DateTime, server_default=func.now(),
                          comment="Timestamp of creation.")
         updated = Column(DateTime, server_default=func.now(), server_onupdate=func.now(),
@@ -53,17 +83,19 @@ def populate_data_infrastructure(engine: Engine, schema: str, model: dict) -> No
         __table_args__ = {
             "comment": "Image table.", "extend_existing": True}
 
-        id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False,
-                    comment="ID of the entry.")
+        id = Column(UUIDType(binary=False), primary_key=True, unique=True, nullable=False, default=uuid4,
+                    comment="UUID of the entry.")
         url = Column(String, unique=True, nullable=False,
                      comment="URL of the entry.")
         source = Column(String,
                      comment="Source of the entry.")
         data = Column(JSON,
                       comment="Metadata entry config.")
-        file = Column(String,
-                     comment="Name of the image file.")
+        path = Column(String,
+                     comment="Path of the image file.")
         
+        state = Column(String,
+                     comment="State of the entry (full, extracted, ...).")
         created = Column(DateTime, server_default=func.now(),
                          comment="Timestamp of creation.")
         updated = Column(DateTime, server_default=func.now(), server_onupdate=func.now(),
@@ -71,7 +103,7 @@ def populate_data_infrastructure(engine: Engine, schema: str, model: dict) -> No
         inactive = Column(Boolean, nullable=False, default=False,
                           comment="Inactivity flag.")
 
-    for dataclass in [Model, Image]:
+    for dataclass in [Model, ModelVersion, Image]:
         model[dataclass.__tablename__.replace(schema, "")] = dataclass
 
     base.metadata.create_all(bind=engine)

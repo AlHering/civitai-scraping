@@ -98,7 +98,8 @@ class MetadataScraper(object):
                 "model", 
                 url=url,
                 source="civitai.com",
-                data=entry)   
+                data=entry,
+                state="full")   
 
     @internet_utility.timeout(180.0)
     def save_image_to_disk(self, url: str, image_folder: str) -> str:
@@ -129,15 +130,17 @@ class MetadataScraper(object):
         
         if not obj:
             print(f"\tFound new image {entry['id']}, adding...")
-            file_name = None
+            file_path = None
             if self.image_folder:
-                file_name = self.save_image_to_disk(url=entry["url"], image_folder=self.image_folder).split("/")[-1]
+                file_path = self.save_image_to_disk(url=entry["url"], image_folder=self.image_folder)
             self.database.post_object(
                 "image", 
                 url=url,
                 source="civitai.com",
                 data=entry,
-                file=file_name)
+                path=file_path,
+                state="full",
+            )
             
     def get_url_for_asset(self, asset_type: str, entry: dict) -> str:
         """
