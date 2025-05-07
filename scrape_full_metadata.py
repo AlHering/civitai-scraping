@@ -138,6 +138,19 @@ class MetadataScraper(object):
                 source="civitai.com",
                 data=entry,
                 file=file_name)
+            
+    def get_url_for_asset(self, asset_type: str, entry: dict) -> str:
+        """
+        Returns asset URL.
+        :param asset_type: Asset type out of ["models", "images"].
+        :param entry: Asset entry.
+        :return: Asset URL
+        """
+        if asset_type == "models":
+            return f"https://civitai.com/api/v1/models/{entry['id']}"
+        elif asset_type == "images":
+            image_url_parts =  [part for part in entry["url"].split("/") if not part.lower().startswith("width=")]
+            return "/".join(image_url_parts)
 
     def import_response_file(self, file_path: str, asset_type: str = "models") -> None:
         """
@@ -150,10 +163,6 @@ class MetadataScraper(object):
         except:
             print(f"\n\tFile {file_path} could not be loaded...\n")
             data = {}
-
-        entry_url_base = {
-                "models": "https://civitai.com/api/v1/models/", 
-                "images": "https://civitai.com/api/v1/images/"}[asset_type]
         
         patching_method = {
                 "models": self.post_or_patch_model_entry, 
@@ -162,10 +171,10 @@ class MetadataScraper(object):
         try:
             if "items" in data:
                 for index, entry in enumerate(tqdm(data["items"], desc=f"Importing {asset_type} entries...", unit="entry", leave=False)):
-                    url = entry_url_base + str(entry["id"])
+                    url = self.get_url_for_asset(asset_type=asset_type, entry=entry)
                     patching_method(url=url, entry=entry)
             elif "id" in data:
-                url = entry_url_base + str(entry["id"])
+                url = self.get_url_for_asset(asset_type=asset_type, entry=entry)
                 patching_method(url=url, entry=data)
             else:
                 print(f"\n\tFile {file_path}: entry {entry['id']} could not be imported...\n")
@@ -179,9 +188,23 @@ class MetadataScraper(object):
         :param asset_type: Asset type out of ["models", "images"].
         """
         for root, _, files in os.walk(path):
-            for file in tqdm(files, desc="Loading response files...", unit="file"):
+            for file in tqdm(files, desc="Loading response files...", unit="file", leave=False):
                 file_path = os.path.join(root, file)
                 self.import_response_file(file_path=file_path)
+
+    def get_cover_images(self, output_path: str) -> None:
+        """
+        Downloads cover images for model versions.
+        :param output_path: Output path for cover images.
+        """
+        raise NotImplementedError("'get_cover_images' is not implemented yet.")
+        with self.database.session_factory() as session:
+            progress_bar = tqdm(desc="Iterating over model entries...", unit="models", total=database.get_object_count_by_type("model"), leave=False)
+            for obj in session.query(database.model["model"]).yield_per(50):
+                model = obj.data
+                for model_version in tqdm(model["modelVersions"], desc="Iterating over model version entries...", unit="model versions", leave=False):
+                    pass
+                progress_bar.update()
 
 
 if __name__ == "__main__":
@@ -202,7 +225,7 @@ if __name__ == "__main__":
         database=database,
         image_folder=None
     )
-    # Change "models" to "images" below to scrape image metadata to database
+    # Set "models" or "images" below to scrape the corresponding metadata to database
     scraper.scrape_to_database(asset_type="models", start_url=None)
 
     
